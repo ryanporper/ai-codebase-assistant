@@ -38,20 +38,6 @@ Base64 Decode
 Normalized Source Files
 ```
 
-Each ingested source file is transformed into a structure similar to:
-
-```ts
-{
-  path: "server/controllers/auth.js",
-  language: "javascript",
-  content: "...source code...",
-  size: 4821,
-  sha: "..."
-}
-```
-
-This normalized data will be used in the next phase for code chunking and AI indexing.
-
 ## Planned AI Architecture
 
 ```text
@@ -112,47 +98,6 @@ AI Code Review
 - Tool Calling
 - AI Agents
 - AI-Assisted Code Review
-
-## Project Structure
-
-```text
-ai-codebase-assistant/
-├── app/
-│   ├── api/
-│   │   └── github/
-│   │       ├── repository/
-│   │       │   └── route.ts
-│   │       ├── tree/
-│   │       │   └── route.ts
-│   │       └── ingest/
-│   │           └── route.ts
-│   ├── repositories/
-│   │   └── page.tsx
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
-│
-├── components/
-│   └── repository/
-│       └── repository-form.tsx
-│
-├── lib/
-│   └── github/
-│       ├── detect-language.ts
-│       ├── filter-source-files.ts
-│       └── parse-repository-url.ts
-│
-├── types/
-│   └── github.ts
-│
-├── public/
-├── .env.example
-├── .gitignore
-├── package.json
-├── postcss.config.mjs
-├── tsconfig.json
-└── README.md
-```
 
 ## Getting Started
 
@@ -327,31 +272,5 @@ as well as lock files.
 ## Project Goal
 
 The goal is to build a production-style AI developer tool rather than a generic chatbot.
-
-The finished application will demonstrate:
-
-```text
-Full-Stack Development
-        +
-GitHub API Integration
-        +
-Repository Ingestion
-        +
-Code Chunking
-        +
-Embeddings
-        +
-Vector Search
-        +
-RAG
-        +
-LLMs
-        +
-AI Agents
-        +
-Tool Calling
-        +
-AI Evaluation
-```
 
 The end result should allow developers to connect a repository, ask architecture and implementation questions, trace code behavior, and receive source-grounded AI responses.
