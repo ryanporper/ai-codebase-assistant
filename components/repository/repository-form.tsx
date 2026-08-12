@@ -1,7 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import type { GitHubFile, GitHubRepository } from "@/types/github";
+import type {
+  GitHubFile,
+  GitHubRepository,
+  IngestedGitHubFile,
+} from "@/types/github";
 
 export default function RepositoryForm() {
   const [repositoryUrl, setRepositoryUrl] = useState("");
@@ -11,6 +15,9 @@ export default function RepositoryForm() {
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [files, setFiles] = useState<GitHubFile[]>([]);
+  const [ingestedFiles, setIngestedFiles] = useState<IngestedGitHubFile[]>([]);
+
+  const [ingesting, setIngesting] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -88,6 +95,46 @@ export default function RepositoryForm() {
     }
   }
 
+  async function ingestRepository() {
+    if (!repository || files.length === 0) {
+      return;
+    }
+
+    setIngesting(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/github/ingest", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          repositoryUrl,
+          files,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to ingest repository.");
+      }
+
+      setIngestedFiles(data.files);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Something went wrong.");
+      }
+    } finally {
+      setIngesting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <form
@@ -161,6 +208,13 @@ export default function RepositoryForm() {
             >
               {scanning ? "Scanning..." : "Scan Repository"}
             </button>
+            <button
+              onClick={ingestRepository}
+              disabled={ingesting}
+              className="mt-5 rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {ingesting ? "Ingesting..." : "Ingest Source Code"}
+            </button>
           </div>
         </div>
       )}
@@ -188,6 +242,43 @@ export default function RepositoryForm() {
                 className="border-b border-slate-100 px-4 py-3 last:border-b-0"
               >
                 <code className="text-sm text-slate-700">{file.path}</code>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {ingestedFiles.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Repository Ingested</h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Source code is ready for chunking and AI indexing.
+              </p>
+            </div>
+
+            <span className="rounded-md bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
+              {ingestedFiles.length} files
+            </span>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {ingestedFiles.map((file) => (
+              <div
+                key={file.sha}
+                className="rounded-lg border border-slate-200 p-4"
+              >
+                <code className="text-sm font-medium text-slate-800">
+                  {file.path}
+                </code>
+
+                <div className="mt-3 flex gap-4 text-xs text-slate-500">
+                  <span>{file.language}</span>
+
+                  <span>{file.size.toLocaleString()} bytes</span>
+                </div>
               </div>
             ))}
           </div>
