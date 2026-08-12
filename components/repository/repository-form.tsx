@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import type { GitHubRepository } from "@/types/github";
+import type { GitHubFile, GitHubRepository } from "@/types/github";
 
 export default function RepositoryForm() {
   const [repositoryUrl, setRepositoryUrl] = useState("");
@@ -9,6 +9,8 @@ export default function RepositoryForm() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [files, setFiles] = useState<GitHubFile[]>([]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -43,6 +45,46 @@ export default function RepositoryForm() {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function scanRepository() {
+    if (!repository) {
+      return;
+    }
+
+    setScanning(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/github/tree", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          repositoryUrl,
+          branch: repository.default_branch,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to scan repository.");
+      }
+
+      setFiles(data.files);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Something went wrong.");
+      }
+    } finally {
+      setScanning(false);
     }
   }
 
@@ -112,6 +154,42 @@ export default function RepositoryForm() {
               <p className="text-xs text-slate-500">Stars</p>
               <p className="font-medium">{repository.stargazers_count}</p>
             </div>
+            <button
+              onClick={scanRepository}
+              disabled={scanning}
+              className="mt-6 rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {scanning ? "Scanning..." : "Scan Repository"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {files.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Source Files</h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Files selected for future AI indexing.
+              </p>
+            </div>
+
+            <span className="rounded-md bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+              {files.length} files
+            </span>
+          </div>
+
+          <div className="mt-6 max-h-[500px] overflow-y-auto rounded-lg border border-slate-200">
+            {files.map((file) => (
+              <div
+                key={file.sha + file.path}
+                className="border-b border-slate-100 px-4 py-3 last:border-b-0"
+              >
+                <code className="text-sm text-slate-700">{file.path}</code>
+              </div>
+            ))}
           </div>
         </div>
       )}
