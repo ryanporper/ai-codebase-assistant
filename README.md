@@ -21,21 +21,37 @@ The project is designed to demonstrate practical AI engineering skills alongside
 ## Current Architecture
 
 ```text
-GitHub Repository URL
-        ↓
-Repository Metadata
-        ↓
-Default Branch
-        ↓
-GitHub File Tree
-        ↓
-Source File Filtering
-        ↓
-Git Blob Retrieval
-        ↓
-Base64 Decode
-        ↓
-Normalized Source Files
+GitHub URL
+     ↓
+Parse owner/repository
+     ↓
+Authenticated GitHub REST API
+     ↓
+Repository metadata
+     ↓
+Default branch
+     ↓
+Recursive Git tree
+     ↓
+Detect truncated tree
+     ↓
+Filter source files
+     ↓
+Skip oversized files
+     ↓
+Fetch blobs
+     ↓
+Decode Base64
+     ↓
+Detect language
+     ↓
+Normalize source code
+     ↓
+Track skipped files
+     ↓
+Monitor rate limits
+     ↓
+READY FOR CHUNKING
 ```
 
 ## Planned AI Architecture
@@ -211,8 +227,10 @@ as well as lock files.
 - [x] Retrieve source file contents
 - [x] Detect programming languages
 - [x] Normalize source file data
-- [ ] Add authenticated GitHub API access
-- [ ] Improve ingestion performance and rate-limit handling
+- [x] Add authenticated GitHub API access
+- [x] Add file-size safeguards
+- [x] Add rate-limit monitoring
+- [x] Add failed/skipped-file reporting
 
 ### Phase 3 — Code Chunking
 

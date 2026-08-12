@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { parseGitHubRepositoryUrl } from "@/lib/github/parse-repository-url";
 import { filterSourceFiles } from "@/lib/github/filter-source-files";
+import { githubFetch } from "@/lib/github/github-fetch";
+import { getGitHubRateLimit } from "@/lib/github/get-rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,12 +18,11 @@ export async function POST(request: NextRequest) {
         },
         {
           status: 400,
-        }
+        },
       );
     }
 
-    const repository =
-      parseGitHubRepositoryUrl(repositoryUrl);
+    const repository = parseGitHubRepositoryUrl(repositoryUrl);
 
     if (!repository) {
       return NextResponse.json(
@@ -30,20 +31,17 @@ export async function POST(request: NextRequest) {
         },
         {
           status: 400,
-        }
+        },
       );
     }
 
     const branchName = branch || "main";
 
-    const response = await fetch(
+    const response = await githubFetch(
       `https://api.github.com/repos/${repository.owner}/${repository.repo}/git/trees/${branchName}?recursive=1`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-        },
-      }
     );
+
+    const rateLimit = getGitHubRateLimit(response);
 
     if (!response.ok) {
       return NextResponse.json(
@@ -52,7 +50,7 @@ export async function POST(request: NextRequest) {
         },
         {
           status: response.status,
-        }
+        },
       );
     }
 
@@ -65,6 +63,8 @@ export async function POST(request: NextRequest) {
       branch: branchName,
       totalFiles: data.tree.length,
       sourceFileCount: sourceFiles.length,
+      truncated: data.truncated ?? false,
+      rateLimit,
       files: sourceFiles,
     });
   } catch (error) {
@@ -72,12 +72,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error:
-          "Something went wrong while retrieving the repository.",
+        error: "Something went wrong while retrieving the repository.",
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

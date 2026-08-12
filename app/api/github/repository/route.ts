@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseGitHubRepositoryUrl } from "@/lib/github/parse-repository-url";
+import { githubFetch } from "@/lib/github/github-fetch";
+import { getGitHubRateLimit } from "@/lib/github/get-rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,14 +33,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(
-      `https://api.github.com/repos/${repository.owner}/${repository.repo}`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-        },
-      }
-    );
+    const response = await githubFetch(
+  `https://api.github.com/repos/${repository.owner}/${repository.repo}`
+);
+
+const rateLimit =
+  getGitHubRateLimit(response);
 
     if (!response.ok) {
       return NextResponse.json(
@@ -53,7 +53,10 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+  repository: data,
+  rateLimit,
+});
   } catch {
     return NextResponse.json(
       {

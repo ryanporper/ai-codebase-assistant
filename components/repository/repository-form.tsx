@@ -8,6 +8,14 @@ import type {
 } from "@/types/github";
 
 export default function RepositoryForm() {
+  type IngestionResult = {
+    requestedFileCount: number;
+    ingestedFileCount: number;
+    skippedFileCount: number;
+  };
+
+  const [ingestionResult, setIngestionResult] =
+    useState<IngestionResult | null>(null);
   const [repositoryUrl, setRepositoryUrl] = useState("");
   const [repository, setRepository] = useState<GitHubRepository | null>(null);
 
@@ -43,7 +51,7 @@ export default function RepositoryForm() {
         throw new Error(data.error || "Unable to retrieve repository.");
       }
 
-      setRepository(data);
+      setRepository(data.repository);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -124,6 +132,13 @@ export default function RepositoryForm() {
       }
 
       setIngestedFiles(data.files);
+      setIngestionResult({
+        requestedFileCount: data.requestedFileCount,
+
+        ingestedFileCount: data.ingestedFileCount,
+
+        skippedFileCount: data.skippedFileCount,
+      });
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -244,6 +259,34 @@ export default function RepositoryForm() {
                 <code className="text-sm text-slate-700">{file.path}</code>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {ingestionResult && (
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-lg bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">Requested</p>
+
+            <p className="mt-1 text-xl font-semibold">
+              {ingestionResult.requestedFileCount}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-green-50 p-4">
+            <p className="text-xs text-green-700">Ingested</p>
+
+            <p className="mt-1 text-xl font-semibold text-green-800">
+              {ingestionResult.ingestedFileCount}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-amber-50 p-4">
+            <p className="text-xs text-amber-700">Skipped</p>
+
+            <p className="mt-1 text-xl font-semibold text-amber-800">
+              {ingestionResult.skippedFileCount}
+            </p>
           </div>
         </div>
       )}
