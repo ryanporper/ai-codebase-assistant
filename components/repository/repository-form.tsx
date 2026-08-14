@@ -5,6 +5,7 @@ import type {
   GitHubFile,
   GitHubRepository,
   IngestedGitHubFile,
+  CodeChunk,
 } from "@/types/github";
 
 export default function RepositoryForm() {
@@ -27,11 +28,19 @@ export default function RepositoryForm() {
 
   const [ingesting, setIngesting] = useState(false);
 
+  const [chunks, setChunks] = useState<CodeChunk[]>([]);
+
+  const [chunking, setChunking] = useState(false);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     setError("");
     setRepository(null);
+    setFiles([]);
+    setIngestedFiles([]);
+    setIngestionResult(null);
+    setChunks([]);
     setLoading(true);
 
     try {
@@ -70,6 +79,10 @@ export default function RepositoryForm() {
 
     setScanning(true);
     setError("");
+    setFiles([]);
+    setIngestedFiles([]);
+    setIngestionResult(null);
+    setChunks([]);
 
     try {
       const response = await fetch("/api/github/tree", {
@@ -110,6 +123,7 @@ export default function RepositoryForm() {
 
     setIngesting(true);
     setError("");
+    setChunks([]);
 
     try {
       const response = await fetch("/api/github/ingest", {
@@ -147,6 +161,44 @@ export default function RepositoryForm() {
       }
     } finally {
       setIngesting(false);
+    }
+  }
+
+  async function chunkRepository() {
+    if (!repository || ingestedFiles.length === 0) {
+      return;
+    }
+
+    setChunking(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/code/chunk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          repository: repository.full_name,
+          files: ingestedFiles,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to chunk repository.");
+      }
+
+      setChunks(data.chunks);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Something went wrong.");
+      }
+    } finally {
+      setChunking(false);
     }
   }
 
@@ -216,20 +268,31 @@ export default function RepositoryForm() {
               <p className="text-xs text-slate-500">Stars</p>
               <p className="font-medium">{repository.stargazers_count}</p>
             </div>
+            {/* <div className="mt-6 flex flex-wrap gap-3"> */}
             <button
               onClick={scanRepository}
               disabled={scanning}
-              className="mt-6 rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {scanning ? "Scanning..." : "Scan Repository"}
             </button>
+
             <button
               onClick={ingestRepository}
-              disabled={ingesting}
-              className="mt-5 rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
+              disabled={ingesting || files.length === 0}
+              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {ingesting ? "Ingesting..." : "Ingest Source Code"}
             </button>
+
+            <button
+              onClick={chunkRepository}
+              disabled={chunking || ingestedFiles.length === 0}
+              className="rounded-lg bg-violet-600 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {chunking ? "Chunking..." : "Create Code Chunks"}
+            </button>
+            {/* </div> */}
           </div>
         </div>
       )}
@@ -322,6 +385,44 @@ export default function RepositoryForm() {
 
                   <span>{file.size.toLocaleString()} bytes</span>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {chunks.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Code Chunks</h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Source code has been prepared for semantic indexing.
+              </p>
+            </div>
+
+            <span className="rounded-md bg-violet-50 px-3 py-1 text-sm font-medium text-violet-700">
+              {chunks.length} chunks
+            </span>
+          </div>
+
+          <div className="mt-6 max-h-[600px] space-y-3 overflow-y-auto">
+            {chunks.slice(0, 25).map((chunk) => (
+              <div
+                key={chunk.id}
+                className="rounded-lg border border-slate-200 p-4"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <code className="text-sm font-medium">{chunk.filePath}</code>
+
+                  <span className="text-xs text-slate-500">
+                    Lines {chunk.startLine}–{chunk.endLine}
+                  </span>
+                </div>
+
+                <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-md bg-slate-950 p-4 text-xs text-slate-100">
+                  {chunk.content.slice(0, 600)}
+                </pre>
               </div>
             ))}
           </div>
