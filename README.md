@@ -21,37 +21,29 @@ The project is designed to demonstrate practical AI engineering skills alongside
 ## Current Architecture
 
 ```text
-GitHub URL
-     ↓
-Parse owner/repository
-     ↓
-Authenticated GitHub REST API
-     ↓
-Repository metadata
-     ↓
-Default branch
-     ↓
-Recursive Git tree
-     ↓
-Detect truncated tree
-     ↓
-Filter source files
-     ↓
-Skip oversized files
-     ↓
-Fetch blobs
-     ↓
-Decode Base64
-     ↓
-Detect language
-     ↓
-Normalize source code
-     ↓
-Track skipped files
-     ↓
-Monitor rate limits
-     ↓
-READY FOR CHUNKING
+GitHub Repository URL
+        ↓
+Repository Metadata
+        ↓
+Default Branch
+        ↓
+GitHub File Tree
+        ↓
+Source File Filtering
+        ↓
+Git Blob Retrieval
+        ↓
+Base64 Decoding
+        ↓
+Language Detection
+        ↓
+Normalized Source Files
+        ↓
+Code Chunking
+        ↓
+File + Line Metadata
+        ↓
+Ready for Semantic Indexing
 ```
 
 ## Planned AI Architecture
@@ -234,10 +226,14 @@ as well as lock files.
 
 ### Phase 3 — Code Chunking
 
-- [ ] Split source files into smaller chunks
-- [ ] Preserve file and line metadata
-- [ ] Improve chunk boundaries around functions and classes
-- [ ] Add chunk IDs and repository references
+- [x] Create code chunk data model
+- [x] Split source files into smaller chunks
+- [x] Preserve repository and file metadata
+- [x] Preserve source line ranges
+- [x] Add overlapping chunk boundaries
+- [x] Add code chunk preview UI
+- [ ] Add function/class-aware chunking
+- [ ] Improve chunking for different programming languages
 
 ### Phase 4 — AI Search
 
